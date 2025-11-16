@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reggio-Quiz</title>
+<style>
+body { font-family: Arial; background:#eef; margin:0; padding:0;
+       display:flex; justify-content:center; align-items:center; height:100vh; }
+#app { background:white; padding:20px; border-radius:15px; width:90%;
+       max-width:600px; box-shadow:0 0 10px rgba(0,0,0,0.2);}
+button { width:100%; padding:12px; margin:8px 0; background:#6c5ce7;
+         color:white; border:none; border-radius:10px; cursor:pointer; }
+button:hover { background:#4a39c3; }
+#gif img { width:200px; border-radius:10px; margin-top:10px; }
+.correct { background:#55efc4 !important; }
+.wrong { background:#ff7675 !important; }
+#feedback { width:100%; height:80px; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<!-- Background music -->
+<audio id="bgm" src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Komiku/It_s_time_for_adventure/Komiku_-_02_-_The_Big_Adventurer.mp3" autoplay loop></audio>
+
+<div id="app">
+<div id="start">
+<h2>Willkommen beim Reggio‑Quiz!</h2>
+<button onclick="startQuiz()">Start</button>
+</div>
+
+<div id="quiz" style="display:none;">
+<h3 id="question"></h3>
+<div id="answers"></div>
+<div id="gif"></div>
+</div>
+
+<div id="end" style="display:none;">
+<h2>Fertig!</h2>
+<p id="score"></p>
+<p><strong>Shirin und Aytülu sagen danke (: </strong></p>
+</div>
+</div>
+
+<audio id="soundCorrect" src="https://actions.google.com/sounds/v1/cartoon/concussive_hit_guitar_boing.ogg"></audio>
+<audio id="soundWrong" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+
+<script>
+document.body.addEventListener('click', () => {
+ document.getElementById("bgm").play();
+}, { once:true });
+
+const wrongGifs = [
+ "https://cataas.com/cat/sad",
+ "https://cataas.com/cat/cute",
+ "https://cataas.com/cat/funny"
+];
+
+const rightGifs = [
+ "https://cataas.com/cat/cute/says/Yeah!",
+ "https://cataas.com/cat/cute/says/Correct!",
+ "https://cataas.com/cat/cute/says/Nice!"
+];
+
+const funnyLines = [
+ "🤣 Falsch, aber wenigstens lustig!",
+ "😂 Nope! Versuch's nochmal!",
+ "🙃 Dein Gehirn ist kurz spazieren gegangen!",
+ "😹 Falsch, aber die Katze ist stolz auf dich!"
+];
+
+const questions = [
+ {q:"Wer gilt als der zentrale Motor der konzeptionellen Entwicklung der Reggio-Pädagogik?",
+  a:["Maria Montessori","Loris Malaguzzi","Carla Rinaldi","Jean Piaget"], c:1},
+
+ {q:"Welches Ereignis kennzeichnete den Beginn der staatlich gefestigten öffentlichen Verantwortung für die frühe Bildung in Reggio?",
+  a:["Die Ausstellung „Die hundert Sprachen des Kindes“ (1981)",
+     "Das Gesetz von 1971 (Gesetz 1044)",
+     "Die Gründung der ersten selbstverwalteten Kitas (1945)",
+     "Die Auszeichnung durch Newsweek (1991)"], c:1},
+
+ {q:"Was ist der „Hauptkern“ der Reggio-Sichtweise auf das Kind?",
+  a:["Das Kind ist ein unfertiger Erwachsener, der überwunden werden muss.",
+     "Das Kind ist primär ein soziales Wesen, dessen Hauptaufgabe die Anpassung ist.",
+     "Das Kind ist kompetent, aktiv, forscherisch und voller Potenziale.",
+     "Das Kind muss durch konsequente Wissensvermittlung zum Bürger erzogen werden."], c:2},
+
+ {q:"Welcher Begriff fasst die Überzeugung zusammen, dass Kinder vielfältige Ausdrucks- und Lernformen besitzen?",
+  a:["Der Dritte Erzieher","Die Atelierista-Rolle","Die Hundert Sprachen des Kindes","Die Partizipationskultur"], c:2},
+
+ {q:"Welche Rolle nimmt die Fachkraft primär ein?",
+  a:["Die anleitende Lehrerin und Wissensvermittlerin.",
+     "Die Expertin für starre didaktische Konzepte.",
+     "Die emotionale Bezugsperson ohne aktive Beteiligung am Lernprozess.",
+     "Die Begleiterin, Forscherin, Zeugin und Mitlernende."], c:3},
+
+ {q:"Was ist die zentrale Arbeitsform, die sich primär aus den Interessen der Kinder entwickelt?",
+  a:["Der Morgenkreis","Das Freispiel","Die Projektarbeit","Frontaler Unterricht"], c:2},
+
+ {q:"Welche pädagogische Funktion wird dem Raum in der Reggio-Pädagogik zugeschrieben?",
+  a:["Der Raum dient primär der Bewahrung des traditionellen Spielzeugs.",
+     "Der Raum ist der „Dritte Erzieher“, der Lernanreize schafft und Kommunikation ermöglicht.",
+     "Der Raum muss möglichst neutral und ohne kindliche Gestaltung bleiben.",
+     "Der Raum muss strikt in altersgetrennte Bereiche eingeteilt sein."], c:1},
+
+ {q:"Welche Bezeichnung trägt die zentrale Halle oder der Haupttreffpunkt innerhalb der Reggio-Einrichtungen?",
+  a:["Das Atelier","Das Kabinett","Die Piazza","Das Laboratorium"], c:2},
+
+ {q:"Welche spezialisierte pädagogische Rolle ist in der Reggio-Pädagogik für die ästhetische Gestaltung und Materialauswahl zuständig?",
+  a:["Der Koordinator","Der Dokumentarist","Der Pädagoge","Der Atelierista"], c:3},
+
+ {q:"Warum gilt die Reggio-Pädagogik als „Orientierung“ und nicht als „starres Modell“?",
+  a:["Weil sie sich ausschließlich auf das Atelier konzentriert.",
+     "Weil sie zur ständigen Reflexion auffordert und eine Anpassung an aktuelle päd. Trends erlaubt.",
+     "Weil sie keine Weiterentwicklung erlaubt und auf starren Regeln besteht.",
+     "Weil sie nur für Krippen, aber nicht für Kindergärten geeignet ist."], c:1}
+];
+
+let index=0, score=0;
+
+function startQuiz(){
+ document.getElementById("start").style.display="none";
+ document.getElementById("quiz").style.display="block";
+ loadQuestion();
+}
+
+function loadQuestion(){
+ const q=questions[index];
+ document.getElementById("gif").innerHTML="";
+ document.getElementById("question").textContent=q.q;
+ const ansBox=document.getElementById("answers");
+ ansBox.innerHTML="";
+ q.a.forEach((ans,i)=>{
+   const btn=document.createElement("button");
+   btn.textContent=ans;
+   btn.onclick=()=>checkAnswer(btn,i);
+   ansBox.appendChild(btn);
+ });
+}
+
+function checkAnswer(btn,choice){
+ const q=questions[index];
+ const buttons=document.querySelectorAll("#answers button");
+ buttons.forEach(b=>b.disabled=true);
+
+ if(choice===q.c){
+   score++;
+   btn.classList.add("correct");
+   document.getElementById("soundCorrect").play();
+   document.getElementById("gif").innerHTML=`<img src="${rightGifs[Math.floor(Math.random()*rightGifs.length)]}">`;
+ } else {
+   btn.classList.add("wrong");
+   document.getElementById("soundWrong").play();
+   document.getElementById("gif").innerHTML=
+     funnyLines[Math.floor(Math.random()*funnyLines.length)] +
+     `<br><img src="${wrongGifs[Math.floor(Math.random()*wrongGifs.length)]}">`;
+ }
+ setTimeout(nextQuestion,1800);
+}
+
+function nextQuestion(){
+ index++;
+ if(index<questions.length) loadQuestion();
+ else finish();
+}
+
+function finish(){
+ document.getElementById("quiz").style.display="none";
+ document.getElementById("end").style.display="block";
+ document.getElementById("score").textContent=`Dein Ergebnis: ${score} / ${questions.length}`;
+}
+</script>
+</body>
+</html>
